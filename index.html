@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>SpeakUp English</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #080810;
+    --surface:  #10101C;
+    --surface2: #181828;
+    --border:   #252538;
+    --purple:   #8B5CF6;
+    --purple2:  #A78BFA;
+    --cyan:     #22D3EE;
+    --amber:    #FBBF24;
+    --green:    #34D399;
+    --red:      #F87171;
+    --text:     #F0F0FF;
+    --muted:    #6B6B8A;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-body); }
+
+/* ── APP SHELL ── */
+#app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px 20px 100px; }
+.screen.active { display: block; }
+
+/* ── BOTTOM NAV ── */
+nav {
+display: none; flex-shrink: 0;
+background: rgba(16,16,28,0.95);
+backdrop-filter: blur(20px);
+border-top: 1px solid var(–border);
+padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+nav.visible { display: flex; }
+nav button {
+flex: 1; background: none; border: none; cursor: pointer;
+display: flex; flex-direction: column; align-items: center; gap: 3px;
+padding: 6px 0; transition: opacity .2s;
+}
+nav button .nav-icon { font-size: 22px; }
+nav button .nav-label { font-size: 10px; color: var(–muted); font-family: var(–font-body); font-weight: 500; letter-spacing: .3px; }
+nav button.active .nav-label { color: var(–purple2); }
+nav button.active { border-top: 2px solid var(–purple); margin-top: -2px; }
+
+/* ── COMMON ── */
+.back-btn { background: none; border: none; color: var(–purple2); font-size: 17px; font-family: var(–font-body); cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+.screen-title { font-family: var(–font-head); font-size: 28px; font-weight: 800; color: var(–text); margin-bottom: 4px; }
+.screen-sub { font-size: 14px; color: var(–muted); margin-bottom: 24px; }
+.card { background: var(–surface); border-radius: 18px; padding: 18px; border: 1px solid var(–border); margin-bottom: 14px; }
+.pill { display: inline-block; border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 700; font-family: var(–font-head); }
+.btn { border: none; border-radius: 14px; padding: 15px 20px; font-size: 15px; font-weight: 700; font-family: var(–font-head); cursor: pointer; transition: transform .15s, opacity .15s; width: 100%; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(–purple); color: #fff; box-shadow: 0 4px 20px rgba(139,92,246,.35); }
+.btn-outline { background: transparent; color: var(–purple2); border: 1.5px solid var(–purple); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── HOME ── */
+#home .greeting { font-size: 15px; color: var(–muted); margin-bottom: 4px; }
+#home .hero-title { font-family: var(–font-head); font-size: 34px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; }
+#home .hero-title span { color: var(–purple2); }
+#home .hero-sub { font-size: 14px; color: var(–muted); margin-bottom: 28px; }
+.streak-card {
+display: flex; align-items: center; gap: 14px;
+background: linear-gradient(135deg, #1C1400, #120E00);
+border: 1px solid rgba(251,191,36,.2); border-radius: 18px;
+padding: 18px; margin-bottom: 28px;
+}
+.streak-card .s-icon { font-size: 40px; }
+.streak-card .s-num { font-family: var(–font-head); font-size: 20px; font-weight: 800; color: var(–amber); }
+.streak-card .s-sub { font-size: 13px; color: #8A7030; margin-top: 2px; }
+.section-label { font-size: 11px; color: var(–muted); font-weight: 700; letter-spacing: 2px; margin-bottom: 14px; font-family: var(–font-head); }
+.feature-card {
+display: flex; align-items: center; gap: 14px;
+border-radius: 18px; padding: 18px; margin-bottom: 12px;
+border: 1px solid; cursor: pointer; transition: transform .15s;
+}
+.feature-card:active { transform: scale(.98); }
+.feature-card .f-icon-box { width: 54px; height: 54px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.feature-card .f-title { font-family: var(–font-head); font-size: 17px; font-weight: 700; }
+.feature-card .f-sub { font-size: 13px; color: var(–muted); margin-top: 3px; }
+.feature-card .f-arrow { font-size: 28px; margin-left: auto; opacity: .7; }
+
+/* ── PRONUNCIATION ── */
+.phrase-box { background: linear-gradient(135deg,#160D30,#0D0A20); border: 1px solid rgba(139,92,246,.3); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+.phrase-box .p-text { font-family: var(–font-head); font-size: 22px; font-weight: 700; line-height: 1.4; margin-bottom: 10px; }
+.phrase-box .p-phonetic { font-size: 14px; color: var(–purple2); font-style: italic; }
+.phrase-counter { font-size: 13px; color: var(–muted); margin-bottom: 20px; }
+.mic-area { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 28px; }
+.mic-btn {
+width: 90px; height: 90px; border-radius: 50%; border: none; cursor: pointer;
+background: var(–purple); font-size: 36px;
+display: flex; align-items: center; justify-content: center;
+box-shadow: 0 0 0 0 rgba(139,92,246,.5);
+transition: transform .15s;
+}
+.mic-btn.recording { background: var(–red); animation: pulse 1s infinite; box-shadow: 0 0 0 0 rgba(248,113,113,.5); }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,.5); } 50% { box-shadow: 0 0 0 20px rgba(248,113,113,0); } }
+.mic-hint { font-size: 14px; color: var(–muted); }
+.score-ring { position: relative; width: 120px; height: 120px; margin: 0 auto 12px; }
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring .score-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(–font-head); font-size: 34px; font-weight: 800; }
+.score-bar { height: 6px; background: var(–surface2); border-radius: 3px; overflow: hidden; margin: 12px 0 20px; }
+.score-bar-fill { height: 100%; border-radius: 3px; transition: width .8s ease; }
+.result-actions { display: flex; gap: 10px; }
+.result-actions .btn { flex: 1; }
+.history-box { background: var(–surface); border-radius: 16px; padding: 16px; }
+.history-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(–border); }
+.history-row:last-child { border-bottom: none; }
+.history-phrase { font-size: 13px; color: var(–muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+.history-score { font-family: var(–font-head); font-weight: 700; font-size: 16px; }
+
+/* ── CONVERSATION ── */
+#conversation { display: none; flex-direction: column; padding: 0; }
+#conversation.active { display: flex; }
+.chat-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(–border); flex-shrink: 0; background: var(–bg); }
+.chat-topbar .ai-info { display: flex; align-items: center; gap: 8px; }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(–green); }
+.ai-name { font-family: var(–font-head); font-weight: 700; font-size: 15px; }
+.chat-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.bubble { display: flex; align-items: flex-end; gap: 8px; }
+.bubble.user { flex-direction: row-reverse; }
+.bubble-avatar { font-size: 22px; flex-shrink: 0; }
+.bubble-inner { max-width: 78%; border-radius: 18px; padding: 12px 16px; font-size: 15px; line-height: 1.5; }
+.bubble.ai .bubble-inner { background: var(–surface2); border: 1px solid var(–border); border-bottom-left-radius: 4px; color: #E0E0F0; }
+.bubble.user .bubble-inner { background: var(–cyan); border-bottom-right-radius: 4px; color: #000; font-weight: 500; }
+.typing { display: flex; align-items: center; gap: 6px; padding: 12px 16px; background: var(–surface2); border-radius: 18px; border-bottom-left-radius: 4px; border: 1px solid var(–border); width: fit-content; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(–cyan); animation: blink 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%,80%,100% { opacity: .3; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+.chat-input-row { display: flex; align-items: flex-end; gap: 10px; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(–border); background: var(–surface); flex-shrink: 0; }
+.chat-input { flex: 1; background: var(–surface2); border: 1px solid var(–border); border-radius: 20px; padding: 12px 16px; color: var(–text); font-family: var(–font-body); font-size: 15px; resize: none; max-height: 120px; outline: none; }
+.chat-input::placeholder { color: var(–muted); }
+.send-btn { width: 46px; height: 46px; border-radius: 50%; background: var(–cyan); border: none; cursor: pointer; font-size: 18px; flex-shrink: 0; transition: opacity .2s; display: flex; align-items: center; justify-content: center; }
+.send-btn:disabled { opacity: .3; }
+
+/* ── NATIVE PHRASES ── */
+.topic-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; scrollbar-width: none; }
+.topic-row::-webkit-scrollbar { display: none; }
+.topic-chip { border: 1.5px solid var(–border); background: var(–surface); border-radius: 20px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(–muted); white-space: nowrap; cursor: pointer; transition: all .2s; font-family: var(–font-head); flex-shrink: 0; }
+.topic-chip.active { border-color: var(–purple); background: rgba(139,92,246,.15); color: var(–purple2); }
+.tabs { display: flex; background: var(–surface); border-radius: 14px; padding: 4px; margin-bottom: 18px; }
+.tab { flex: 1; border: none; background: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; font-family: var(–font-head); color: var(–muted); cursor: pointer; transition: all .2s; }
+.tab.active { background: rgba(139,92,246,.2); color: var(–purple2); }
+.phrase-card { background: var(–surface); border: 1px solid rgba(139,92,246,.2); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+.phrase-card .pc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.num-badge { width: 28px; height: 28px; border-radius: 50%; background: var(–purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; font-family: var(–font-head); flex-shrink: 0; }
+.pc-phrase { font-family: var(–font-head); font-size: 18px; font-weight: 700; color: #DDD0FF; flex: 1; }
+.pc-meaning { font-size: 14px; color: var(–muted); margin-bottom: 10px; }
+.pc-example { background: var(–surface2); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+.pc-example-label { font-size: 10px; color: var(–muted); font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+.pc-example-text { font-size: 14px; color: #C0C0E0; font-style: italic; line-height: 1.5; }
+.speak-mini-btn { background: transparent; border: 1.5px solid var(–purple); border-radius: 10px; padding: 9px; width: 100%; font-size: 14px; font-weight: 600; color: var(–purple2); font-family: var(–font-head); cursor: pointer; }
+.ex-card { background: var(–surface); border: 1px solid rgba(139,92,246,.25); border-radius: 18px; padding: 20px; }
+.ex-progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ex-progress-text { font-size: 13px; color: var(–muted); }
+.ex-score { font-size: 13px; font-weight: 700; color: var(–green); font-family: var(–font-head); }
+.ex-prog-bar { height: 4px; background: var(–surface2); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }
+.ex-prog-fill { height: 100%; background: var(–purple); border-radius: 2px; transition: width .4s; }
+.ex-type-badge { display: inline-block; background: rgba(139,92,246,.15); border-radius: 8px; padding: 5px 12px; font-size: 11px; font-weight: 700; color: var(–purple2); font-family: var(–font-head); margin-bottom: 12px; }
+.ex-instruction { font-size: 15px; color: #CCC; line-height: 1.5; margin-bottom: 12px; }
+.ex-question { background: var(–surface2); border-radius: 12px; padding: 16px; margin-bottom: 12px; font-size: 17px; color: #E0E0FF; font-weight: 500; line-height: 1.5; }
+.ex-hint { font-size: 13px; color: var(–muted); font-style: italic; margin-bottom: 12px; }
+.ex-input { width: 100%; background: var(–surface2); border: 1.5px solid var(–border); border-radius: 12px; padding: 14px; color: var(–text); font-size: 15px; font-family: var(–font-body); resize: none; outline: none; min-height: 60px; margin-bottom: 12px; }
+.ex-input.correct { border-color: var(–green); background: rgba(52,211,153,.06); }
+.ex-input.wrong   { border-color: var(–red);   background: rgba(248,113,113,.06); }
+.ex-feedback { display: flex; align-items: flex-start; gap: 10px; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.ex-feedback.correct { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.2); }
+.ex-feedback.wrong   { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.2); }
+.ex-feedback-icon { font-size: 22px; }
+.ex-feedback-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; font-family: var(–font-head); }
+.ex-feedback-ans  { font-size: 13px; color: #FF8A80; margin-bottom: 4px; }
+.ex-feedback-speak{ font-size: 13px; color: var(–muted); font-style: italic; }
+
+/* ── PROGRESS ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+.stat-card { background: var(–surface); border-radius: 18px; padding: 18px; text-align: center; border: 1px solid var(–border); }
+.stat-icon { font-size: 28px; margin-bottom: 8px; }
+.stat-value { font-family: var(–font-head); font-size: 28px; font-weight: 900; }
+.stat-label { font-size: 12px; color: var(–muted); margin-top: 4px; }
+.badges-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.badge-card { background: var(–surface); border: 1px solid var(–border); border-radius: 16px; padding: 18px; text-align: center; }
+.badge-card.locked { opacity: .4; }
+.badge-icon { font-size: 36px; margin-bottom: 8px; }
+.badge-label { font-size: 13px; font-weight: 600; color: #CCC; }
+
+/* ── SPINNER ── */
+.spinner { width: 36px; height: 36px; border: 3px solid var(–border); border-top-color: var(–purple); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(–surface2); border: 1px solid var(–border); border-radius: 12px; padding: 12px 20px; font-size: 14px; color: var(–text); opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── LOADING OVERLAY ── */
+.loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; }
+.loading-text { font-size: 15px; color: var(–muted); font-family: var(–font-head); }
+</style>
+
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ HOME ══ -->
+
+  <div id="home" class="screen active">
+    <p class="greeting">Good day! 👋</p>
+    <h1 class="hero-title">SpeakUp<br/><span>English</span></h1>
+    <p class="hero-sub">Your AI-powered speaking coach</p>
+
+```
+<div class="streak-card">
+  <div class="s-icon">🔥</div>
+  <div>
+    <div class="s-num">7 Day Streak</div>
+    <div class="s-sub">Keep it up! You're on fire.</div>
+  </div>
+</div>
+
+<div class="section-label">PRACTICE MODES</div>
+
+<div class="feature-card" style="background:#160D30;border-color:rgba(139,92,246,.3)" onclick="goTo('pronunciation')">
+  <div class="f-icon-box" style="background:rgba(139,92,246,.15)">🎤</div>
+  <div><div class="f-title" style="color:#A78BFA">Pronunciation</div><div class="f-sub">Record & get AI feedback</div></div>
+  <div class="f-arrow" style="color:#A78BFA">›</div>
+</div>
+<div class="feature-card" style="background:#0A1E24;border-color:rgba(34,211,238,.3)" onclick="goTo('conversation')">
+  <div class="f-icon-box" style="background:rgba(34,211,238,.15)">💬</div>
+  <div><div class="f-title" style="color:#22D3EE">AI Conversation</div><div class="f-sub">Chat with Aria, your AI tutor</div></div>
+  <div class="f-arrow" style="color:#22D3EE">›</div>
+</div>
+<div class="feature-card" style="background:#1A1500;border-color:rgba(251,191,36,.3)" onclick="goTo('phrases')">
+  <div class="f-icon-box" style="background:rgba(251,191,36,.15)">🌟</div>
+  <div><div class="f-title" style="color:#FBBF24">Native Phrases</div><div class="f-sub">AI phrases + writing exercises</div></div>
+  <div class="f-arrow" style="color:#FBBF24">›</div>
+</div>
+<div class="feature-card" style="background:#0D1A0E;border-color:rgba(52,211,153,.3)" onclick="goTo('progress')">
+  <div class="f-icon-box" style="background:rgba(52,211,153,.15)">📊</div>
+  <div><div class="f-title" style="color:#34D399">My Progress</div><div class="f-sub">Streaks & achievements</div></div>
+  <div class="f-arrow" style="color:#34D399">›</div>
+</div>
+```
+
+  </div>
+
+  <!-- ══ PRONUNCIATION ══ -->
+
+  <div id="pronunciation" class="screen">
+    <button class="back-btn" onclick="goTo('home')">‹ Back</button>
+    <h2 class="screen-title">Pronunciation</h2>
+    <div class="phrase-counter" id="phrase-counter">1 / 5</div>
+    <div class="phrase-box">
+      <div class="p-text" id="phrase-text"></div>
+      <div class="p-phonetic" id="phrase-phonetic"></div>
+    </div>
+    <div class="mic-area" id="mic-area">
+      <div class="mic-hint" id="mic-hint">Tap mic and read aloud</div>
+      <button class="mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
+    </div>
+    <div id="result-area" style="display:none">
+      <div class="score-ring" id="score-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1E1E2E" stroke-width="10"/>
+          <circle id="score-circle" cx="60" cy="60" r="50" fill="none" stroke="#8B5CF6" stroke-width="10"
+            stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round" style="transition:stroke-dashoffset .8s ease"/>
+        </svg>
+        <div class="score-num" id="score-num">0</div>
+      </div>
+      <div style="text-align:center;font-size:20px;margin-bottom:12px" id="score-feedback"></div>
+      <div class="score-bar"><div class="score-bar-fill" id="score-bar-fill" style="width:0%"></div></div>
+      <div class="result-actions">
+        <button class="btn btn-outline" onclick="retryPhrase()">🔁 Retry</button>
+        <button class="btn btn-primary" onclick="nextPhrase()">Next ›</button>
+      </div>
+    </div>
+    <div id="history-area" style="margin-top:24px;display:none">
+      <div class="section-label">RECENT SCORES</div>
+      <div class="history-box" id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ CONVERSATION ══ -->
+
+  <div id="conversation" class="screen">
+    <div class="chat-topbar">
+      <button class="back-btn" style="margin:0" onclick="goTo('home')">‹</button>
+      <div class="ai-info"><div class="online-dot"></div><div class="ai-name">Aria — AI Tutor</div></div>
+      <button style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer" onclick="clearChat()">Clear</button>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Type your message…" rows="1"
+        oninput="autoResize(this)" onkeydown="chatKeydown(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendChat()" disabled>➤</button>
+    </div>
+  </div>
+
+  <!-- ══ NATIVE PHRASES ══ -->
+
+  <div id="phrases" class="screen">
+    <button class="back-btn" onclick="goTo('home')">‹ Back</button>
+    <h2 class="screen-title">Native Phrases</h2>
+    <p class="screen-sub">AI picks 5 real phrases + builds exercises for you</p>
+
+```
+<div class="section-label">CHOOSE A TOPIC</div>
+<div class="topic-row" id="topic-row"></div>
+
+<button class="btn btn-primary" id="gen-btn" onclick="generatePhrases()" style="margin-bottom:28px">
+  ✨ Generate Phrases &amp; Exercises
+</button>
+
+<div id="phrases-results" style="display:none">
+  <div class="tabs">
+    <button class="tab active" id="tab-phrases" onclick="switchTab('phrases')">📖 Phrases (5)</button>
+    <button class="tab" id="tab-exercises" onclick="switchTab('exercises')">✏️ Exercises (5)</button>
+  </div>
+  <div id="phrases-panel"></div>
+  <div id="exercises-panel" style="display:none"></div>
+</div>
+```
+
+  </div>
+
+  <!-- ══ PROGRESS ══ -->
+
+  <div id="progress" class="screen">
+    <button class="back-btn" onclick="goTo('home')">‹ Back</button>
+    <h2 class="screen-title">My Progress</h2>
+    <p class="screen-sub">Keep going — you're doing great!</p>
+    <div class="stats-grid">
+      <div class="stat-card" style="border-color:rgba(251,191,36,.2)"><div class="stat-icon">🔥</div><div class="stat-value" style="color:#FBBF24">7</div><div class="stat-label">Day Streak</div></div>
+      <div class="stat-card" style="border-color:rgba(251,191,36,.2)"><div class="stat-icon">🌟</div><div class="stat-value" style="color:#FBBF24">42</div><div class="stat-label">Phrases Learned</div></div>
+      <div class="stat-card" style="border-color:rgba(139,92,246,.2)"><div class="stat-icon">🎯</div><div class="stat-value" style="color:#A78BFA">84%</div><div class="stat-label">Avg Score</div></div>
+      <div class="stat-card" style="border-color:rgba(34,211,238,.2)"><div class="stat-icon">📅</div><div class="stat-value" style="color:#22D3EE">21</div><div class="stat-label">Sessions</div></div>
+    </div>
+    <div class="section-label">BADGES</div>
+    <div class="badges-grid">
+      <div class="badge-card"><div class="badge-icon">🏆</div><div class="badge-label">First Session</div></div>
+      <div class="badge-card"><div class="badge-icon">🔥</div><div class="badge-label">7-Day Streak</div></div>
+      <div class="badge-card locked"><div class="badge-icon">🌟</div><div class="badge-label">50 Phrases</div></div>
+      <div class="badge-card locked"><div class="badge-icon">🎤</div><div class="badge-label">Pronunciation Pro</div></div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+
+  <nav id="nav">
+    <button onclick="goTo('pronunciation')" id="nav-pronunciation"><span class="nav-icon">🎤</span><span class="nav-label">Speak</span></button>
+    <button onclick="goTo('conversation')"  id="nav-conversation" ><span class="nav-icon">💬</span><span class="nav-label">Chat</span></button>
+    <button onclick="goTo('phrases')"       id="nav-phrases"      ><span class="nav-icon">🌟</span><span class="nav-label">Phrases</span></button>
+    <button onclick="goTo('progress')"      id="nav-progress"     ><span class="nav-icon">📊</span><span class="nav-label">Progress</span></button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const API_KEY = 'YOUR_ANTHROPIC_API_KEY'; // ← replace this
+
+// ─── NAVIGATION ───────────────────────────────────────────
+let currentScreen = 'home';
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const nav = document.getElementById('nav');
+  nav.classList.toggle('visible', id !== 'home');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById('nav-' + id);
+  if (nb) nb.classList.add('active');
+  currentScreen = id;
+  if (id === 'conversation' && chatMessages.length === 0) initChat();
+}
+
+// ─── TOAST ────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── PRONUNCIATION ────────────────────────────────────────
+const PHRASES = [
+  { text: "The weather is beautiful today.",         phonetic: "/ðə ˈwɛðər ɪz ˈbjuːtɪfəl təˈdeɪ/" },
+  { text: "I would like a cup of coffee, please.",   phonetic: "/aɪ wʊd laɪk ə kʌp əv ˈkɒfi pliːz/" },
+  { text: "Could you speak more slowly?",            phonetic: "/kʊd juː spiːk mɔːr ˈsloʊli/" },
+  { text: "She sells seashells by the seashore.",    phonetic: "/ʃiː sɛlz ˈsiːʃɛlz baɪ ðə ˈsiːʃɔːr/" },
+  { text: "How long have you been learning English?",phonetic: "/haʊ lɒŋ həv juː biːn ˈlɜːnɪŋ ˈɪŋɡlɪʃ/" },
+];
+let phraseIdx = 0, isRecording = false, recordTimer = null, scoreHistory = [];
+
+function loadPhrase() {
+  document.getElementById('phrase-text').textContent = PHRASES[phraseIdx].text;
+  document.getElementById('phrase-phonetic').textContent = PHRASES[phraseIdx].phonetic;
+  document.getElementById('phrase-counter').textContent = (phraseIdx+1) + ' / ' + PHRASES.length;
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('mic-area').style.display = 'flex';
+  document.getElementById('mic-hint').textContent = 'Tap mic and read aloud';
+  const btn = document.getElementById('mic-btn');
+  btn.textContent = '🎤'; btn.classList.remove('recording');
+  isRecording = false;
+}
+
+function toggleRecording() {
+  if (!isRecording) {
+    isRecording = true;
+    const btn = document.getElementById('mic-btn');
+    btn.textContent = '⏹'; btn.classList.add('recording');
+    document.getElementById('mic-hint').textContent = 'Recording… tap to stop';
+    recordTimer = setTimeout(stopRecording, 4000);
+  } else {
+    stopRecording();
+  }
+}
+
+function stopRecording() {
+  clearTimeout(recordTimer);
+  isRecording = false;
+  document.getElementById('mic-hint').textContent = 'Analyzing…';
+  document.getElementById('mic-btn').textContent = '⚙️';
+  setTimeout(showResult, 1200);
+}
+
+function showResult() {
+  const score = Math.floor(Math.random()*31)+70;
+  const color = score>=90?'#34D399':score>=75?'#FBBF24':'#F87171';
+  const fb    = score>=90?'🌟 Excellent!':score>=75?'👍 Good job!':'💪 Keep practicing!';
+  document.getElementById('mic-area').style.display = 'none';
+  document.getElementById('result-area').style.display = 'block';
+  // animate ring
+  const offset = 314 - (314 * score / 100);
+  const circle = document.getElementById('score-circle');
+  circle.style.stroke = color;
+  setTimeout(() => circle.style.strokeDashoffset = offset, 50);
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('score-num').style.color = color;
+  document.getElementById('score-feedback').textContent = fb;
+  const bar = document.getElementById('score-bar-fill');
+  bar.style.background = color;
+  setTimeout(() => bar.style.width = score+'%', 50);
+  // history
+  scoreHistory.unshift({ phrase: PHRASES[phraseIdx].text, score, color });
+  if (scoreHistory.length > 5) scoreHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!scoreHistory.length) return;
+  document.getElementById('history-area').style.display = 'block';
+  document.getElementById('history-list').innerHTML = scoreHistory.map(h =>
+    `<div class="history-row">
+      <div class="history-phrase">${h.phrase}</div>
+      <div class="history-score" style="color:${h.color}">${h.score}</div>
+    </div>`
+  ).join('');
+}
+
+function retryPhrase() { loadPhrase(); }
+function nextPhrase()  { phraseIdx = (phraseIdx+1)%PHRASES.length; loadPhrase(); }
+
+// init pronunciation
+loadPhrase();
+
+// ─── CONVERSATION ─────────────────────────────────────────
+const SYSTEM = `You are Aria, a friendly English speaking coach. Keep replies to 2-4 sentences. Gently correct grammar by showing the correct form. Encourage the learner. Ask follow-up questions to keep conversation going. Use simple clear English.`;
+let chatMessages = [];
+let chatLoading = false;
+
+function initChat() {
+  chatMessages = [];
+  const first = "Hi! I'm Aria, your English speaking coach 👋 Let's practice! What did you do today?";
+  chatMessages.push({ role:'assistant', content: first });
+  renderMessages();
+}
+
+function renderMessages() {
+  const el = document.getElementById('chat-messages');
+  el.innerHTML = chatMessages.map(m => `
+    <div class="bubble ${m.role}">
+      ${m.role==='assistant'?'<div class="bubble-avatar">🤖</div>':''}
+      <div class="bubble-inner">${m.content}</div>
+    </div>`
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearChat() { chatMessages = []; initChat(); }
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  document.getElementById('send-btn').disabled = !el.value.trim();
+}
+
+function chatKeydown(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || chatLoading) return;
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  chatMessages.push({ role:'user', content: text });
+  renderMessages();
+  chatLoading = true;
+  // show typing
+  const el = document.getElementById('chat-messages');
+  el.innerHTML += `<div class="bubble ai" id="typing-bubble"><div class="bubble-avatar">🤖</div><div class="typing"><span></span><span></span><span></span></div></div>`;
+  el.scrollTop = el.scrollHeight;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-api-key': API_KEY, 'anthropic-version':'2023-06-01' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:300, system:SYSTEM,
+        messages: chatMessages.map(m=>({role:m.role,content:m.content})) })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text ?? "Sorry, I didn't catch that. Try again!";
+    chatMessages.push({ role:'assistant', content: reply });
+  } catch {
+    chatMessages.push({ role:'assistant', content:'⚠️ Connection error. Check API key.' });
+  } finally {
+    chatLoading = false;
+    renderMessages();
+  }
+}
+
+// ─── NATIVE PHRASES ───────────────────────────────────────
+const TOPICS = ['Daily Conversation','At Work','Making Plans','Expressing Feelings','Asking for Help'];
+let selectedTopic = 0, phrasesData = null, exIdx = 0, exScore = { correct:0, total:0 }, exChecked = false;
+
+// render topic chips
+document.getElementById('topic-row').innerHTML = TOPICS.map((t,i)=>
+  `<button class="topic-chip${i===0?' active':''}" onclick="selectTopic(${i})">${t}</button>`
+).join('');
+
+function selectTopic(i) {
+  selectedTopic = i;
+  document.querySelectorAll('.topic-chip').forEach((c,j)=>c.classList.toggle('active',i===j));
+}
+
+async function generatePhrases() {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px"></div> Generating…';
+  document.getElementById('phrases-results').style.display = 'none';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01' },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1200,
+        system:'You are an English coach. Respond ONLY with valid JSON, no markdown or extra text.',
+        messages:[{ role:'user', content:`Generate 5 phrases native English speakers commonly use for: "${TOPICS[selectedTopic]}".
+Then create 5 writing exercises (one per phrase).
+Return ONLY this JSON:
+{
+  "phrases":[{"phrase":"...","meaning":"...","example":"..."}],
+  "exercises":[{"type":"fill","instruction":"...","question":"sentence with ___ blank","answer":"phrase","hint":"first word hint"}]
+}
+Mix types: fill=fill-in-blank, reorder=jumbled words, translate=paraphrase. Keep it conversational.`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text ?? '';
+    phrasesData = JSON.parse(text.replace(/```json|```/g,'').trim());
+    exIdx=0; exScore={correct:0,total:0}; exChecked=false;
+    renderPhrasesPanel();
+    renderExercisePanel();
+    document.getElementById('phrases-results').style.display = 'block';
+    switchTab('phrases');
+  } catch(e) {
+    showToast('⚠️ Error generating. Check API key.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Generate Phrases &amp; Exercises';
+  }
+}
+
+function renderPhrasesPanel() {
+  document.getElementById('phrases-panel').innerHTML =
+    phrasesData.phrases.map((p,i)=>`
+      <div class="phrase-card">
+        <div class="pc-header">
+          <div class="num-badge">${i+1}</div>
+          <div class="pc-phrase">"${p.phrase}"</div>
+        </div>
+        <div class="pc-meaning">💡 ${p.meaning}</div>
+        <div class="pc-example">
+          <div class="pc-example-label">EXAMPLE</div>
+          <div class="pc-example-text">${p.example}</div>
+        </div>
+        <button class="speak-mini-btn" onclick="showToast('🎤 Say aloud: \\'${p.example.replace(/'/g,"\\'")}\\' — focus on rhythm!')">🎤 Practice Speaking</button>
+      </div>`).join('') +
+    `<button class="btn btn-primary" style="margin-top:4px" onclick="switchTab('exercises')">Start Writing Exercises →</button>`;
+}
+
+function renderExercisePanel() {
+  if (!phrasesData || !phrasesData.exercises[exIdx]) return;
+  const ex = phrasesData.exercises[exIdx];
+  const typeLabel = ex.type==='fill'?'✏️ Fill in the Blank':ex.type==='reorder'?'🔀 Reorder Words':'🔄 Paraphrase';
+  document.getElementById('exercises-panel').innerHTML = `
+    <div class="ex-progress-row">
+      <span class="ex-progress-text">Exercise ${exIdx+1} of ${phrasesData.exercises.length}</span>
+      <span class="ex-score">✅ ${exScore.correct}/${exScore.total}</span>
+    </div>
+    <div class="ex-prog-bar"><div class="ex-prog-fill" style="width:${(exIdx/phrasesData.exercises.length)*100}%"></div></div>
+    <div class="ex-card">
+      <div class="ex-type-badge">${typeLabel}</div>
+      <div class="ex-instruction">${ex.instruction}</div>
+      <div class="ex-question">${ex.question}</div>
+      ${ex.hint && !exChecked ? `<div class="ex-hint">💭 Hint: ${ex.hint}</div>` : ''}
+      <textarea class="ex-input${exChecked?(document.getElementById('ex-answer')?.value.trim().toLowerCase()===ex.answer.toLowerCase()?' correct':' wrong'):''}"
+        id="ex-answer" placeholder="Type your answer here…" ${exChecked?'readonly':''}
+        oninput="document.getElementById('ex-check-btn').disabled=!this.value.trim()"
+        rows="2">${exChecked?(document.getElementById('ex-answer')?.value||''):''}</textarea>
+
+```
+  ${exChecked ? renderFeedback(ex) : ''}
+  ${!exChecked
+    ? `<button class="btn btn-primary" id="ex-check-btn" onclick="checkExercise()" disabled>Check Answer</button>`
+    : `<button class="btn btn-primary" onclick="nextExercise()">${exIdx<phrasesData.exercises.length-1?'Next Exercise →':'🏁 Finish'}</button>`}
+</div>`;
+```
+
+}
+
+function renderFeedback(ex) {
+const ans = document.getElementById(‘ex-answer’)?.value.trim().toLowerCase();
+const correct = ans === ex.answer.toLowerCase();
+return `<div class="ex-feedback ${correct?'correct':'wrong'}"> <div class="ex-feedback-icon">${correct?'🎉':'❌'}</div> <div> <div class="ex-feedback-title">${correct?'Correct!':'Not quite…'}</div> ${!correct?`<div class="ex-feedback-ans">Answer: “${ex.answer}”</div>`:’’}
+<div class="ex-feedback-speak">Now say it aloud: “${ex.answer}”</div>
+</div>
+
+  </div>`;
+}
+
+function checkExercise() {
+const ex = phrasesData.exercises[exIdx];
+const ans = document.getElementById(‘ex-answer’).value.trim().toLowerCase();
+const correct = ans === ex.answer.toLowerCase();
+exChecked = true;
+exScore.total++;
+if (correct) exScore.correct++;
+renderExercisePanel();
+// restore answer
+const ta = document.getElementById(‘ex-answer’);
+if (ta) { ta.value = ans; ta.readOnly = true; }
+}
+
+function nextExercise() {
+if (exIdx < phrasesData.exercises.length-1) {
+exIdx++; exChecked = false; renderExercisePanel();
+} else {
+showToast(`🎉 Done! ${exScore.correct}/${phrasesData.exercises.length} correct!`);
+exIdx=0; exScore={correct:0,total:0}; exChecked=false; renderExercisePanel();
+}
+}
+
+function switchTab(tab) {
+document.getElementById(‘tab-phrases’).classList.toggle(‘active’, tab===‘phrases’);
+document.getElementById(‘tab-exercises’).classList.toggle(‘active’, tab===‘exercises’);
+document.getElementById(‘phrases-panel’).style.display   = tab===‘phrases’?‘block’:‘none’;
+document.getElementById(‘exercises-panel’).style.display = tab===‘exercises’?‘block’:‘none’;
+}
+</script>
+</body>
+</html>
